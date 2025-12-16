@@ -319,14 +319,17 @@ class CurveeReactor {
             targetX += this.mouse.vx * 0.5;
             targetY += this.mouse.vy * 0.5;
             
-            // Spring physics
-            const springForceX = -this.physics.stiffness * (point.x - targetX);
-            const springForceY = -this.physics.stiffness * (point.y - targetY);
-            
-            // Update velocity with damping
-            velocity.x = velocity.x * this.physics.damping + springForceX;
-            velocity.y = velocity.y * this.physics.damping + springForceY;
-            
+            // acceleration = -k*(position-target) - damping*velocity
+          const accelerationX = -this.physics.stiffness * (point.x - targetX) - 
+                     this.physics.damping * velocity.x;
+          const accelerationY = -this.physics.stiffness * (point.y - targetY) - 
+                     this.physics.damping * velocity.y;
+
+            // Update velocity with acceleration
+           velocity.x += accelerationX;
+           velocity.y += accelerationY;
+
+
             // Update position
             point.x += velocity.x;
             point.y += velocity.y;
@@ -613,18 +616,20 @@ class CurveeReactor {
     }
 
     // UI Methods
-    getNearestControlPoint(x, y, threshold = 30) {
-        for (let i = 1; i <= 2; i++) { // Only check P1 and P2
-            const point = this.controlPoints[i];
-            const distance = Math.sqrt(
-                Math.pow(point.x - x, 2) + 
-                Math.pow(point.y - y, 2)
-            );
-            if (distance < threshold) {
-                return point;
-            }
+   getNearestControlPoint(x, y, threshold = 25) {
+    // ONLY check P₁ and P₂ (indices 1 and 2)
+    // P₀ and P₃ (indices 0 and 3) are FIXED and cannot be dragged
+    for (let i = 1; i <= 2; i++) {
+        const point = this.controlPoints[i];
+        const distance = Math.sqrt(
+            Math.pow(point.x - x, 2) + 
+            Math.pow(point.y - y, 2)
+        );
+        if (distance < threshold) {
+            return point; // Only returns P₁ or P₂
         }
-        return null;
+    }
+    return null; // If not near P₁ or P₂, return null
     }
 
     reset() {
